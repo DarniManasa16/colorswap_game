@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Swap Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Poppins', sans-serif;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 20px 0;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin: 0 auto;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #player {
+            position: absolute;
+            bottom: 20px;
+            left: 175px;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .falling-box {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            transition: transform 0.1s ease;
+        }
+
+        .falling-box:hover {
+            transform: scale(1.1);
+        }
+
+        #score {
+            font-size: 1.8rem;
+            margin: 20px 0;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            display: none;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #game-over h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #ff6b6b;
+        }
+
+        #instructions {
+            margin-top: 20px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+        }
+
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .color-btn.active {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="floating">Color Swap Game</h1>
+        <div id="score">Score: 0</div>
+        <div id="game-container">
+            <div id="player"></div>
+            <div id="game-over">
+                <h2>Game Over!</h2>
+                <p>Final Score: <span id="final-score">0</span></p>
+                <button onclick="restartGame()">Play Again</button>
+            </div>
+        </div>
+        <div id="controls">
+            <div class="color-btn" style="background-color: red;" onclick="changePlayerColor('red')"></div>
+            <div class="color-btn" style="background-color: green;" onclick="changePlayerColor('green')"></div>
+            <div class="color-btn" style="background-color: yellow;" onclick="changePlayerColor('yellow')"></div>
+        </div>
+        <div id="instructions">
+            Use Left and Right arrow keys to move the box
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let gameActive = true;
+        const colors = ['red', 'green', 'yellow'];
+        let playerColor = 'red';
+        const player = document.getElementById('player');
+        const gameContainer = document.getElementById('game-container');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const colorButtons = document.querySelectorAll('.color-btn');
+
+        // Player movement variables
+        let playerSpeed = 10;
+        let playerPositionX = 175;
+        let playerPositionY = 530;  // Starting Y position
+        const playerWidth = 50;
+        const playerHeight = 50;
+        const gameWidth = 400;
+        const gameHeight = 600;
+
+        function changePlayerColor(color) {
+            playerColor = color;
+            player.style.backgroundColor = color;
+            player.style.boxShadow = `0 0 10px ${color}`;
+            
+            // Update active button
+            colorButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.style.backgroundColor === color) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Keyboard controls for all directions
+        document.addEventListener('keydown', (event) => {
+            if (!gameActive) return;
+            
+            if (event.key === 'ArrowLeft') {
+                playerPositionX = Math.max(0, playerPositionX - playerSpeed);
+            } else if (event.key === 'ArrowRight') {
+                playerPositionX = Math.min(gameWidth - playerWidth, playerPositionX + playerSpeed);
+            } else if (event.key === 'ArrowUp') {
+                playerPositionY = Math.max(0, playerPositionY - playerSpeed);
+            } else if (event.key === 'ArrowDown') {
+                playerPositionY = Math.min(gameHeight - playerHeight - 20, playerPositionY + playerSpeed);
+            }
+            
+            player.style.left = playerPositionX + 'px';
+            player.style.bottom = (gameHeight - playerPositionY - playerHeight) + 'px';
+        });
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.backgroundColor = color;
+                gameContainer.appendChild(particle);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 2 + Math.random() * 3;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+
+                let posX = x;
+                let posY = y;
+                let opacity = 1;
+
+                const animate = () => {
+                    posX += vx;
+                    posY += vy;
+                    opacity -= 0.02;
+
+                    particle.style.left = posX + 'px';
+                    particle.style.top = posY + 'px';
+                    particle.style.opacity = opacity;
+
+                    if (opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        gameContainer.removeChild(particle);
+                    }
+                };
+
+                animate();
+            }
+        }
+
+        function createFallingBox() {
+            if (!gameActive) return;
+
+            const box = document.createElement('div');
+            box.className = 'falling-box';
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            box.style.backgroundColor = color;
+            box.style.left = Math.random() * 370 + 'px';
+            box.style.top = '-30px';
+            gameContainer.appendChild(box);
+
+            let position = -30;
+            const fallInterval = setInterval(() => {
+                position += 8;
+                box.style.top = position + 'px';
+
+                // Check collision with player
+                if (position >= playerPositionY - 30 && position <= playerPositionY + playerHeight) {
+                    const boxLeft = parseInt(box.style.left);
+                    if (boxLeft >= playerPositionX - 30 && boxLeft <= playerPositionX + playerWidth) {
+                        if (box.style.backgroundColor === playerColor) {
+                            score++;
+                            scoreDisplay.textContent = 'Score: ' + score;
+                            createParticles(boxLeft + 15, position + 15, color);
+                        } else {
+                            gameOver();
+                        }
+                        clearInterval(fallInterval);
+                        gameContainer.removeChild(box);
+                    }
+                }
+
+                // Remove box if it goes below the game container
+                if (position > gameHeight) {
+                    clearInterval(fallInterval);
+                    gameContainer.removeChild(box);
+                }
+            }, 50);
+        }
+
+        function gameOver() {
+            gameActive = false;
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.style.display = 'block';
+        }
+
+        function restartGame() {
+            score = 0;
+            gameActive = true;
+            scoreDisplay.textContent = 'Score: 0';
+            gameOverScreen.style.display = 'none';
+            playerColor = 'red';
+            player.style.backgroundColor = 'red';
+            player.style.boxShadow = '0 0 10px rgba(255, 0, 0, 0.5)';
+            playerPositionX = 175;
+            playerPositionY = 530;
+            player.style.left = playerPositionX + 'px';
+            player.style.bottom = '20px';
+            
+            // Reset active button
+            colorButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.style.backgroundColor === 'red') {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Start creating falling boxes
+        setInterval(createFallingBox, 1000);
+
+        // Initialize player color and position
+        changePlayerColor('red');
+    </script>
+</body>
+</html> 
